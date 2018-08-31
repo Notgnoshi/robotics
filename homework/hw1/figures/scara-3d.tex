@@ -1,0 +1,27 @@
+\documentclass[tikz]{standalone}
+\usepackage{tikz-3dplot}
+
+\begin{document}
+    \tdplotsetmaincoords{60}{100}
+    \begin{tikzpicture}[tdplot_main_coords]
+        \draw[thick, ->] (0,0,0) -- (7,0,0) node[anchor=north east]{$x$};
+        \draw[thick, <->] (0,-5,0) -- (0,5,0) node[anchor=north west]{$y$};
+        \draw[thick, ->] (0,0,0) -- (0,0,-5) node[left]{$-z$};
+
+        \coordinate (P1) at (0, 0, 0);
+        \coordinate (P2) at (2.5, 2.5, 0);
+        \coordinate (P3) at (2.5, 4.8, 0);
+        \coordinate (P4) at (2.5, 4.8, -2);
+
+        \draw[fill=blue] (P1) node[circle, fill, inner sep=1pt]{} node[above]{$(0, 0, 0)$};
+        \draw[fill=blue] (P2) node[circle, fill, inner sep=1pt]{} node[below left]{$(\tilde x, \tilde y, 0)$};
+        \draw[fill=blue] (P3) node[circle, fill, inner sep=1pt]{} node[right]{$(x, y, 0)$};
+        \draw[fill=blue] (P4) node[circle, fill, inner sep=1pt]{} node[right]{$(x, y, z)$};
+
+        \draw[blue] (P1) -- node[midway, above, black]{$a_1$} (P2) -- node[midway, above, black]{$a_2$} (P3) -- node[midway, right, black]{$q_3$} (P4);
+        \draw[blue, dashed] (P2) -- (4.8, 4.8, 0);
+
+        \tdplotdrawarc[blue]{(P1)}{0.5}{0}{45}{below right, black}{$\theta_1$}
+        \tdplotdrawarc[blue]{(P2)}{0.7}{45}{90}{right, black, yshift=-3}{$\theta_2$}
+    \end{tikzpicture}
+\end{document}
