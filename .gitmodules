@@ -1,0 +1,3 @@
+[submodule "projects/project"]
+	path = projects/project
+	url = git@github.com:macattackftw/RoboticsBot.git
