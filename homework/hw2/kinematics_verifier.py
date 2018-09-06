@@ -35,6 +35,7 @@ class KinematicsVerifier(RosNode):
         plt.legend()
         plt.ion()
         plt.show()
+        # TODO: Save plot when verification is finished.
 
     def update_wplot(self, xp, yp):
         """Updates the physical workspace plot.
@@ -81,3 +82,7 @@ class KinematicsVerifier(RosNode):
         t1, t2 = msg.data
         x, y = forward(a1, a2, t1, t2)
         self.update_cplot(x, y)
+
+    def shutdown(self):
+        plt.savefig('prob2.svg')
+        super().shutdown()
