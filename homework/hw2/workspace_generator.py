@@ -1,30 +1,29 @@
 import itertools
+
 import numpy as np
-import rclpy as ros
 from std_msgs.msg import Float64MultiArray
 
+from ros_node import RosNode
 
-class WorkspaceGenerator:
+
+class WorkspaceGenerator(RosNode):
     """A ROS2 computation node to generate workspace points and publish them
     to the `physData` topic as a `Float64MultiArray` message.
 
     The messages will be published at 5Hz.
     """
 
-    def __init__(self, name='workspace_generator', loop=False):
+    def __init__(self, name, loop=False):
         """Create a ROS2 computation node to generator workspace points.
 
-            :param name: The name of the computation node.
-            :param loop: Whether the generator should loop to the beginning
-                         if/when it finishes generating points.
+        :param name: The name of the computation node.
+        :param loop: Whether the generator should loop to the beginning
+                     if/when it finishes generating points.
         """
-        # Ensure that the ROS2 master process is initialized and running.
-        ros.init(args=None)
-        # Create this computation node.
-        self.node = ros.create_node(name)
-        # This node publishes Float64MultiArray messages to the `/physData` topic.
+        super().__init__(name)
         self.publisher = self.node.create_publisher(Float64MultiArray, 'physData')
-        # Reuse the same message object for every message this instance publishes
+        # Running every 0.2 seconds is 5Hz.
+        self.timer = self.node.create_timer(0.2, self.callback)
         self.msg = Float64MultiArray()
         self.loop = loop
         # A generator of points to publish
@@ -43,9 +42,7 @@ class WorkspaceGenerator:
         return workspace_points
 
     def callback(self):
-        """Publishes a new workspace point every time this function is
-        called.
-        """
+        """Publishes a new workspace point every time this function is called."""
         try:
             self.msg.data = next(self.workspace_points)
             self.publisher.publish(self.msg)
@@ -53,28 +50,7 @@ class WorkspaceGenerator:
             # TODO: Consider destroying the node at this time?
             pass
 
-    def run(self):
-        """Begin execution for this computation node.
-
-        NOTE: If this function is ran in a new process, the ROS2 environment
-              needs to be set up. The solution is to create this instance in
-              the new process before calling this function.
-        """
-        # Running every 0.2 seconds is 5Hz.
-        timer = self.node.create_timer(0.2, self.callback)
-
-        try:
-            while ros.ok():
-                ros.spin_once(self.node)
-        except KeyboardInterrupt:
-            self.node.destroy_timer(timer)
-            self.node.destroy_node()
-            ros.shutdown()
-
-    @classmethod
-    def create_and_run(cls, name='workspace_generator', loop=False):
-        """Create and immediately run this computation node. Necessary as
-        a single entry point in a new process.
-        """
-        instance = cls(name, loop)
-        instance.run()
+    def shutdown(self):
+        """Override the parent class shutdown to also destroy the timer."""
+        self.node.destroy_timer(self.timer)
+        super().shutdown()
