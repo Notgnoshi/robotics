@@ -1,27 +1,41 @@
 #!/usr/bin/env python3
-from multiprocessing import Process
+import matplotlib.pyplot as plt
+import rclpy as ros
+from rclpy.executors import SingleThreadedExecutor
 
-from config_generator import ConfigGenerator
-from kinematics_verifier import KinematicsVerifier
-from workspace_generator import WorkspaceGenerator
+from nodes import ConfigGenerator, KinematicsVerifier, WorkspaceGenerator
 
 
 def main():
     """A single main entry point for a collection of ROS nodes."""
-    try:
-        # Run each ROS node in its own process
-        kv = Process(target=KinematicsVerifier.create_and_run, args=('kinematics_verifier',))
-        cg = Process(target=ConfigGenerator.create_and_run, args=('config_generator',))
-        wg = Process(target=WorkspaceGenerator.create_and_run, args=('workspace_generator',))
+    ros.init(args=None)
 
-        # Make sure consumers are created before the producers
-        kv.start()
-        cg.start()
-        wg.start()
+    kv = KinematicsVerifier(name='kinematics_verifier')
+    cg = ConfigGenerator(name='config_generator')
+    wg = WorkspaceGenerator(name='workspace_generator')
+
+    # Runs all three nodes in a single thread so that there's a single entry point and I don't have
+    # to topologically sort and run each python script individually.
+    executor = SingleThreadedExecutor()
+
+    executor.add_node(kv.node)
+    executor.add_node(cg.node)
+    executor.add_node(wg.node)
+
+    try:
+        executor.spin()
     except KeyboardInterrupt:
-        kv.join()
-        cg.join()
-        wg.join()
+        # Did someone say "hacky-bandaide-bugfix"??
+        print('Waiting for matplotlib figure to close...')
+        plt.show(block=True)
+
+    # TODO: There's probably some OOPy way to handle this automagically, but I'm too pissed off at
+    #       matplotlib to care right now.
+    kv.node.destroy_node()
+    cg.node.destroy_node()
+    wg.node.destroy_node()
+    ros.shutdown()
+
 
 if __name__ == '__main__':
     main()
