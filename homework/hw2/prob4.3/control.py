@@ -11,10 +11,11 @@ class Control:
     indicate the node is done publishing to `/WheelVel`.
     """
 
-    def __init__(self, name):
+    def __init__(self, name, step):
         """Creates the ROS2 computation node to publish wheel velocities.
 
-        :param string name: The name of the node.
+        :param name: The name of the node.
+        :param step: The problem timestep.
         """
         self.node = ros.create_node(name)
         self.publisher = self.node.create_publisher(Float64MultiArray, 'WheelVel')
@@ -22,7 +23,7 @@ class Control:
         # Running every 0.1 seconds is 10Hz.
         self.timer = self.node.create_timer(0.1, self.velocity_cb)
         self.active_timer = self.node.create_timer(1, self.active_cb)
-        self.wheel_velocities = self.velocities(step=0.1)
+        self.wheel_velocities = self.velocities(step)
 
     @staticmethod
     def velocities(step):
@@ -31,8 +32,7 @@ class Control:
         phi1 = 2 + 2 * np.exp(-t)
         phi2 = 2 + np.exp(-2 * t)
 
-        # Also publish the step size to make some math easier.
-        return deque(zip(phi1, phi2, step))
+        return deque(zip(phi1, phi2))
 
     def velocity_cb(self):
         """Publishes wheel velocities at 10Hz"""

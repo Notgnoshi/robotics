@@ -10,27 +10,28 @@ class ForwardK:
     it receives the wheel velocities.
     """
 
-    def __init__(self, name):
+    def __init__(self, name, step):
         """Creates the ROS2 computation node to run the forward kinematics.
 
-        :param string name: The name of the node.
+        :param name: The name of the node.
+        :param step: The problem timestep.
         """
         self.node = ros.create_node(name)
         self.subscriber = self.node.create_subscription(Float64MultiArray, 'WheelVel', self.callback)
-        self.publisher = self.node.create_publisherr(Twist, 'RobotVel')
+        self.publisher = self.node.create_publisher(Twist, 'RobotVel')
+        self.step = step
 
     def callback(self, msg):
         """Receives wheel velocities and runs the forward kinematics."""
-        # TODO: Don't publish step, because the RobotPlot node will need it when integrating...
-        phi1, phi2, step = msg.data
+        phi1, phi2 = msg.data
         dtheta = theta_dot(r=5, L=20, w1=phi1, w2=phi2)
-        # Get the step size from the velocity publisher so there's a single place to change it.
-        theta = dtheta * step
+        theta = dtheta * self.step
         dx = x_dot(r=5, w1=phi1, w2=phi2, theta=theta)
         dy = y_dot(r=5, w1=phi1, w2=phi2, theta=theta)
 
         msg = Twist()
-        msg.linear = [dx, dy]
-        msg.angular = [dtheta]
+        msg.linear.x = dx
+        msg.linear.y = dy
+        msg.angular.x = dtheta
 
         self.publisher.publish(msg)
