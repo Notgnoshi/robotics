@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import rclpy as ros
 from rclpy.executors import SingleThreadedExecutor
-from control import Control
-from forward_k import ForwardK
-from robot_plot import RobotPlot
+from nodes import Control, ForwardK, RobotPlot
 
 STEP_SIZE = 0.1
 
