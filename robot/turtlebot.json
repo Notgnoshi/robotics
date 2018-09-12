@@ -1,0 +1,193 @@
+{
+    "components": [
+        {
+            "pluginName": "org.roboscience.veranda.worldObjectComponent.defaults.circle",
+            "properties": [
+                {
+                    "key": "GlobalPos/Theta",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/X",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/Y",
+                    "value": 0
+                },
+                {
+                    "key": "Name",
+                    "value": "Circle"
+                },
+                {
+                    "key": "radius",
+                    "value": 1
+                }
+            ]
+        },
+        {
+            "pluginName": "org.roboscience.veranda.worldObjectComponent.defaults.fixedwheel",
+            "properties": [
+                {
+                    "key": "Encoder/GlobalPos/Theta",
+                    "value": 0
+                },
+                {
+                    "key": "Encoder/GlobalPos/X",
+                    "value": 0
+                },
+                {
+                    "key": "Encoder/GlobalPos/Y",
+                    "value": 0
+                },
+                {
+                    "key": "Encoder/Name",
+                    "value": "Encoder"
+                },
+                {
+                    "key": "Encoder/channels/angular_velocity",
+                    "value": ""
+                },
+                {
+                    "key": "Encoder/channels/angular_velocity/publish_rate",
+                    "value": 10
+                },
+                {
+                    "key": "Encoder/noise/mu",
+                    "value": 0
+                },
+                {
+                    "key": "Encoder/noise/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/Theta",
+                    "value": "90"
+                },
+                {
+                    "key": "GlobalPos/X",
+                    "value": "0.6"
+                },
+                {
+                    "key": "GlobalPos/Y",
+                    "value": 0
+                },
+                {
+                    "key": "Name",
+                    "value": "Fixed Wheel"
+                },
+                {
+                    "key": "channels/input_speed",
+                    "value": "robot0/right_wheel"
+                },
+                {
+                    "key": "control_noise/mu",
+                    "value": 0
+                },
+                {
+                    "key": "control_noise/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "density",
+                    "value": 1
+                },
+                {
+                    "key": "is_driven",
+                    "value": true
+                },
+                {
+                    "key": "wheel_radius",
+                    "value": 0.5
+                },
+                {
+                    "key": "wheel_width",
+                    "value": 0.2
+                }
+            ]
+        },
+        {
+            "pluginName": "org.roboscience.veranda.worldObjectComponent.defaults.fixedwheel",
+            "properties": [
+                {
+                    "key": "Encoder/GlobalPos/Theta",
+                    "value": 0
+                },
+                {
+                    "key": "Encoder/GlobalPos/X",
+                    "value": 0
+                },
+                {
+                    "key": "Encoder/GlobalPos/Y",
+                    "value": 0
+                },
+                {
+                    "key": "Encoder/Name",
+                    "value": "Encoder"
+                },
+                {
+                    "key": "Encoder/channels/angular_velocity",
+                    "value": ""
+                },
+                {
+                    "key": "Encoder/channels/angular_velocity/publish_rate",
+                    "value": 10
+                },
+                {
+                    "key": "Encoder/noise/mu",
+                    "value": 0
+                },
+                {
+                    "key": "Encoder/noise/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/Theta",
+                    "value": "90"
+                },
+                {
+                    "key": "GlobalPos/X",
+                    "value": "-0.6"
+                },
+                {
+                    "key": "GlobalPos/Y",
+                    "value": 0
+                },
+                {
+                    "key": "Name",
+                    "value": "Fixed Wheel"
+                },
+                {
+                    "key": "channels/input_speed",
+                    "value": "robot0/left_wheel"
+                },
+                {
+                    "key": "control_noise/mu",
+                    "value": 0
+                },
+                {
+                    "key": "control_noise/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "density",
+                    "value": 1
+                },
+                {
+                    "key": "is_driven",
+                    "value": true
+                },
+                {
+                    "key": "wheel_radius",
+                    "value": 0.5
+                },
+                {
+                    "key": "wheel_width",
+                    "value": 0.2
+                }
+            ]
+        }
+    ],
+    "properties": [
+    ]
+}
