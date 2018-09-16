@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
 import rclpy as ros
 from rclpy.executors import SingleThreadedExecutor
-from triangle import Triangle
+
+from diff_drive import DiffDrive
 
 
 def main():
     """A single main entry point for a collection of ROS nodes."""
-    ros.init(args=None)
+    ros.init()
 
-    triangle = Triangle()
+    triangle = DiffDrive('triangle', [(0, 0), (15, 0), (5, 20), (0, 0)], loop=True)
 
     executor = SingleThreadedExecutor()
 
     executor.add_node(triangle.node)
 
     try:
+        print('Running nodes...')
         executor.spin()
     except KeyboardInterrupt:
         pass
 
+    print('Cleaning up nodes...')
     triangle.node.destroy_node()
-    triangle._simulation_timer.destroy_timer(triangle.timer)
     ros.shutdown()
 
 
