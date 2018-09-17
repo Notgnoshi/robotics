@@ -70,8 +70,8 @@ class DiffDrive:
         """
         # Fix the wheel speeds, because I'm almost out of rum.
         speed = 10.0
-        left = -speed / 2
-        right = speed / 2
+        left_turn_speed = -speed / 2
+        right_turn_speed = speed / 2
 
         # Robot dimension constants
         r = 0.5
@@ -83,16 +83,18 @@ class DiffDrive:
         angles = [angle_between(v1, v2) for v1, v2 in pairwise(vectors + [vectors[0]])]
         distances = [magnitude(v) for v in vectors]
 
-        for length, theta in zip(distances, angles):
-            print(f'length = {length}')
+        for distance, angle in zip(distances, angles):
+            print(f'distance = {distance}')
             # Calculate how long it will take to drive the straight distance.
-            drive_time = length / (2 * np.pi * r * speed)
+            drive_time = distance / (2 * np.pi * r * speed)
             yield speed, speed, drive_time
 
-            print(f'angle = {theta}')
+            print(f'angle = {angle}')
             # Calculate how long it will take to turn the given angle with fixed wheel speeds.
-            turn_time = (2 * L * theta) / (r * (right - left))
-            yield right, left, turn_time
+            # BUG: Either this calculation is incorrect, or the robot isn't driving the wheels
+            #      at the given speeds for this time.
+            turn_time = (2 * L * angle) / (r * (right_turn_speed - left_turn_speed))
+            yield right_turn_speed, left_turn_speed, turn_time
 
     def callback(self):
         """Publishes the wheel speeds to control the robot.
