@@ -9,7 +9,8 @@ def main():
     """A single main entry point for a collection of ROS nodes."""
     ros.init()
 
-    triangle = DiffDrive('triangle', [(0, 0), (15, 0), (5, 20), (0, 0)], loop=True)
+    # triangle = DiffDrive('triangle', [(0, 0), (15, 0), (5, 20), (0, 0)], loop=True)
+    triangle = DiffDrive('triangle', [(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)], loop=True)
 
     executor = SingleThreadedExecutor()
 

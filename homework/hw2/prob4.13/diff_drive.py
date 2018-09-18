@@ -42,6 +42,7 @@ class DiffDrive:
 
         # Use the simulation timer so we can play with the simulation speed.
         self._simulation_timer = SimTimer(True, 'veranda/timestamp', self.node)
+        # NOTE: The fidelity of the veranda SimTimer appears to be 0.033 seconds.
         self.timer = self._simulation_timer.create_timer(1, self.callback)
 
         # Make sure each point is an np.array
@@ -73,8 +74,9 @@ class DiffDrive:
         left_turn_speed = -speed / 2
         right_turn_speed = speed / 2
 
-        # Robot dimension constants
+        # Radius of wheel
         r = 0.5
+        # Distance from center of robot to center of wheel
         L = 0.6
 
         # Convert the path points into vectors
