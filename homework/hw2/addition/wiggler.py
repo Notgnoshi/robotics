@@ -3,14 +3,14 @@ from std_msgs.msg import Float32
 from veranda.SimTimer import SimTimer
 
 
-class Wiggle:
+class Wiggler:
     """The wiggle code from the textbook, wrapped in a class to avoid
     contracting cancer from using global variables.
     """
 
     def __init__(self):
-        """Creates an instance of the Wiggle class."""
-        self.node = ros.create_node('Wiggle')
+        """Creates an instance of the Wiggler class."""
+        self.node = ros.create_node('Wiggler')
 
         # Create a simulation timer so we can speed up the simulation without
         # breaking things.

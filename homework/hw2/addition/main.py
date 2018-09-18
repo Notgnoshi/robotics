@@ -3,7 +3,7 @@ import rclpy as ros
 from rclpy.executors import SingleThreadedExecutor
 
 from tracer import PathTracer
-from wiggle import Wiggle
+from wiggler import Wiggler
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
     ros.init()
 
     # Create instances of our Wiggle and PathTracer classes.
-    wiggle = Wiggle()
+    wiggler = Wiggler()
     tracer = PathTracer()
 
     # A SingleThreadedExecutor executes both nodes in the same thread. There
@@ -20,7 +20,7 @@ def main():
     executor = SingleThreadedExecutor()
 
     # Add the ROS nodes to the executor.
-    executor.add_node(wiggle.node)
+    executor.add_node(wiggler.node)
     executor.add_node(tracer.node)
 
     try:
@@ -29,7 +29,7 @@ def main():
     except KeyboardInterrupt:
         # Destroy the nodes and shutdown the ROS client when the user hits <ctrl-c>
         tracer.node.destroy_node()
-        wiggle.node.destroy_node()
+        wiggler.node.destroy_node()
         ros.shutdown()
 
 
