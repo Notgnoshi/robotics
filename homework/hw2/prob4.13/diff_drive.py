@@ -83,6 +83,7 @@ class DiffDrive:
         vectors = [p2 - p1 for p1, p2 in pairwise(self.points)]
         # Get the angles between each vector. Loop back around to close the loop.
         angles = [angle_between(v1, v2) for v1, v2 in pairwise(vectors + [vectors[0]])]
+        # Get the length of each vector
         distances = [magnitude(v) for v in vectors]
 
         for distance, angle in zip(distances, angles):
@@ -110,13 +111,13 @@ class DiffDrive:
             right, left, time = next(self.configs)
             print(f'config = ({right}, {left}, {time})')
             msg = Float32()
-            # Publish the wheel speeds, without whitespace between the lines to reduce
-            # runtime, because that's totally how that works.
+
             msg.data = right
             self.right_wheel.publish(msg)
+
             msg.data = left
             self.left_wheel.publish(msg)
-            # BUG: The wheels are not synchronized?
+
             self.timer = self._simulation_timer.create_timer(time, self.callback)
         except StopIteration:
             pass
