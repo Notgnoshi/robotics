@@ -19,7 +19,6 @@ def main():
     manager.add_node(plotter)
 
     manager.run()
-    plotter.job.terminate()
     rclpy.shutdown()
 
 
