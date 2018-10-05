@@ -23,8 +23,9 @@ class GpsPlotter(Node):
         self.subscriber = self.create_subscription(Pose2D, topic, self.callback)
 
         self.queue = mp.Queue()
+        self.history = history
 
-        self.job = mp.Process(target=self.plotter, args=(self.queue, history), daemon=True)
+        self.job = mp.Process(target=self.plotter, daemon=True)
         self.job.start()
 
     def destroy_node(self):
@@ -48,32 +49,30 @@ class GpsPlotter(Node):
         # so we don't accidentally block important shit from happening.
         self.queue.put((msg.x, msg.y), block=False)
 
-    @staticmethod
-    def plotter(queue, history):
-        """Receives points from the callback in a nonblocking manner.
+    def plotter(self):
+        """Receives points from the callback in a nonblocking manner."""
+        xs = deque([], maxlen=self.history)
+        ys = deque([], maxlen=self.history)
 
-        :param queue: The thread-safe queue to receive messages from.
-        :param history: The maximum number of points to keep.
-        """
-        xs = deque([], maxlen=history)
-        ys = deque([], maxlen=history)
-
-        plt.figure()
+        fig, ax = plt.subplots()
         plt.ion()
-
         plot, = plt.plot([])
         plt.title('Robot GPS Path')
 
         while True:
-            x, y = queue.get(block=True)
+            # If the plotting window is closed, exit.
+            if not plt.fignum_exists(fig.number):
+                break
+            x, y = self.queue.get(block=True)
 
             xs.append(x)
             ys.append(y)
 
             plot.set_data(xs, ys)
 
-            plot.axes.set_xlim(min(xs) - 0.1, max(xs) + 0.1)
-            plot.axes.set_ylim(min(ys) - 0.1, max(ys) + 0.1)
+            # Fit the plot window to the data.
+            ax.autoscale()
+            ax.relim()
 
             # This should be smaller than the publishing interval.
             plt.pause(0.0001)
