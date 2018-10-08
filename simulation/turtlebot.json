@@ -26,6 +26,136 @@
             ]
         },
         {
+            "pluginName": "org.roboscience.veranda.worldObjectComponent.defaults.touchring",
+            "properties": [
+                {
+                    "key": "GlobalPos/Theta",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/X",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/Y",
+                    "value": 0
+                },
+                {
+                    "key": "Name",
+                    "value": "Touch Ring"
+                },
+                {
+                    "key": "angle_end",
+                    "value": 360
+                },
+                {
+                    "key": "angle_start",
+                    "value": 0
+                },
+                {
+                    "key": "channels/output_touches",
+                    "value": "robot/contact"
+                },
+                {
+                    "key": "ring_radius",
+                    "value": 1
+                },
+                {
+                    "key": "sensor_count",
+                    "value": 10
+                }
+            ]
+        },
+        {
+            "pluginName": "org.roboscience.veranda.worldObjectComponent.defaults.gps",
+            "properties": [
+                {
+                    "key": "GlobalPos/Theta",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/X",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/Y",
+                    "value": 0
+                },
+                {
+                    "key": "Name",
+                    "value": "GPS"
+                },
+                {
+                    "key": "channels/output_pose",
+                    "value": "robot/gps"
+                },
+                {
+                    "key": "drift/theta/mu",
+                    "value": 0
+                },
+                {
+                    "key": "drift/theta/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "drift/x/mu",
+                    "value": 0
+                },
+                {
+                    "key": "drift/x/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "drift/y/mu",
+                    "value": 0
+                },
+                {
+                    "key": "drift/y/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "noise/theta/mu",
+                    "value": 0
+                },
+                {
+                    "key": "noise/theta/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "noise/x/mu",
+                    "value": 0
+                },
+                {
+                    "key": "noise/x/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "noise/y/mu",
+                    "value": 0
+                },
+                {
+                    "key": "noise/y/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "probabilities/theta",
+                    "value": 1
+                },
+                {
+                    "key": "probabilities/x",
+                    "value": 1
+                },
+                {
+                    "key": "probabilities/y",
+                    "value": 1
+                },
+                {
+                    "key": "publish_rate",
+                    "value": 10
+                }
+            ]
+        },
+        {
             "pluginName": "org.roboscience.veranda.worldObjectComponent.defaults.fixedwheel",
             "properties": [
                 {
@@ -74,11 +204,11 @@
                 },
                 {
                     "key": "Name",
-                    "value": "Fixed Wheel"
+                    "value": "Right Wheel"
                 },
                 {
                     "key": "channels/input_speed",
-                    "value": "robot0/right_wheel"
+                    "value": "robot/right_wheel"
                 },
                 {
                     "key": "control_noise/mu",
@@ -90,7 +220,7 @@
                 },
                 {
                     "key": "density",
-                    "value": 1
+                    "value": 10
                 },
                 {
                     "key": "is_driven",
@@ -155,11 +285,11 @@
                 },
                 {
                     "key": "Name",
-                    "value": "Fixed Wheel"
+                    "value": "Left Wheel"
                 },
                 {
                     "key": "channels/input_speed",
-                    "value": "robot0/left_wheel"
+                    "value": "robot/left_wheel"
                 },
                 {
                     "key": "control_noise/mu",
@@ -171,7 +301,7 @@
                 },
                 {
                     "key": "density",
-                    "value": 1
+                    "value": 10
                 },
                 {
                     "key": "is_driven",
