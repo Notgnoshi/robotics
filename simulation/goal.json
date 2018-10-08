@@ -1,0 +1,124 @@
+{
+    "components": [
+        {
+            "pluginName": "org.roboscience.veranda.worldObjectComponent.defaults.rectangle",
+            "properties": [
+                {
+                    "key": "GlobalPos/Theta",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/X",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/Y",
+                    "value": 0
+                },
+                {
+                    "key": "Name",
+                    "value": "Goal"
+                },
+                {
+                    "key": "height",
+                    "value": 1
+                },
+                {
+                    "key": "width",
+                    "value": 1
+                }
+            ]
+        },
+        {
+            "pluginName": "org.roboscience.veranda.worldObjectComponent.defaults.gps",
+            "properties": [
+                {
+                    "key": "GlobalPos/Theta",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/X",
+                    "value": 0
+                },
+                {
+                    "key": "GlobalPos/Y",
+                    "value": 0
+                },
+                {
+                    "key": "Name",
+                    "value": "GPS"
+                },
+                {
+                    "key": "channels/output_pose",
+                    "value": "goal/gps"
+                },
+                {
+                    "key": "drift/theta/mu",
+                    "value": 0
+                },
+                {
+                    "key": "drift/theta/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "drift/x/mu",
+                    "value": 0
+                },
+                {
+                    "key": "drift/x/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "drift/y/mu",
+                    "value": 0
+                },
+                {
+                    "key": "drift/y/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "noise/theta/mu",
+                    "value": 0
+                },
+                {
+                    "key": "noise/theta/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "noise/x/mu",
+                    "value": 0
+                },
+                {
+                    "key": "noise/x/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "noise/y/mu",
+                    "value": 0
+                },
+                {
+                    "key": "noise/y/sigma",
+                    "value": 0
+                },
+                {
+                    "key": "probabilities/theta",
+                    "value": 1
+                },
+                {
+                    "key": "probabilities/x",
+                    "value": 1
+                },
+                {
+                    "key": "probabilities/y",
+                    "value": 1
+                },
+                {
+                    "key": "publish_rate",
+                    "value": 10
+                }
+            ]
+        }
+    ],
+    "properties": [
+    ]
+}
