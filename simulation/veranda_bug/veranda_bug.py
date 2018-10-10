@@ -23,7 +23,7 @@ from robotics.nodes import NodeManager, Wiggler
 
 
 def main():
-    """An example of live plotting a robot path in Veranda"""
+    """A demonstration of a (I think) bug in Veranda."""
     rclpy.init()
     manager = NodeManager(policy='single')
 
