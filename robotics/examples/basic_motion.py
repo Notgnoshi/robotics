@@ -12,7 +12,11 @@ def main():
     rclpy.init()
     manager = NodeManager(policy='multi')
 
-    controller = BasicMotionController('robot/gps', 'goal/gps', 'robot/left_wheel', 'robot/right_wheel')
+    controller = BasicMotionController(position_topic='robot/gps',
+                                       goal_topic='goal/gps',
+                                       contact_topic='robot/contact',
+                                       left_control_topic='robot/left_wheel',
+                                       right_control_topic='robot/right_wheel')
     plotter = GpsPlotter('GpsPlotter', 'robot/gps')
 
     manager.add_node(controller)

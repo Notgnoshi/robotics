@@ -1,12 +1,10 @@
 import math
 import threading as th
-import time
 
 import numpy as np
 from geometry_msgs.msg import Pose2D
 from rclpy.node import Node
-from std_msgs.msg import Float32
-from veranda.SimTimer import SimTimer
+from std_msgs.msg import ByteMultiArray, Float32
 
 
 class BasicMotionController(Node):
@@ -52,15 +50,14 @@ class BasicMotionController(Node):
     @staticmethod
     def remap_angle(angle):
         """Remaps the given angle to the range [0, 2pi]"""
-        width = 2 * np.pi
+        return np.mod(angle, 2*np.pi)
 
-        return angle - np.ceil(angle / width) * width
-
-    def __init__(self, position_topic, goal_topic, left_control_topic, right_control_topic):
+    def __init__(self, position_topic, goal_topic, contact_topic, left_control_topic, right_control_topic):
         """Creates a basic motion planner for controlling motion to goal.
 
         :param position_topic: The topic for the current position.
         :param goal_topic: The topic for the goal position.
+        :param contact_topic: The topic for the contact sensor.
         :param left_control_topic: The topic for controlling the left wheel speed.
         :param right_control_topic: The topic for controlling the right wheel speed.
         """
@@ -70,14 +67,17 @@ class BasicMotionController(Node):
 
         self.position = Pose2D()
         self.goal = Pose2D()
-
-        self.simulation = self.simulation = SimTimer(True, 'veranda/timestamp', self)
+        # A ten sensor contact ring.
+        self.contacts = [False] * 10
+        # The maximum number of turns before attempting motion to goal again.
+        self.max_iters = 5
 
         self.left = self.create_publisher(Float32, left_control_topic)
         self.right = self.create_publisher(Float32, right_control_topic)
 
         self.__pos_sub = self.create_subscription(Pose2D, position_topic, self.update_position)
         self.__goal_sub = self.create_subscription(Pose2D, goal_topic, self.update_goal)
+        self.__contact_sub = self.create_subscription(ByteMultiArray, contact_topic, self.update_contacts)
 
         # BUG: This thread never dies...
         self.job = th.Thread(target=self.algorithm, daemon=True)
@@ -89,16 +89,35 @@ class BasicMotionController(Node):
 
     def update_position(self, pose):
         """Updates the current robot position."""
-        # Remap the angle to [0, 2pi]
-        pose.theta = self.remap_angle(pose.theta)
+        # Rotate so that 0rad is in pos x direction instead of pos y...
+        # TODO: <rant></rant>
+        pose.theta = self.remap_angle(pose.theta + np.pi/2)
         self.position = pose
+
+    def update_contacts(self, msg):
+        """Updates the contact sensor array."""
+        self.contacts = [bool(ord(b)) for b in msg.data]
 
     def algorithm(self):
         """The top level container for the Basic Motion Algorithm."""
+        # TODO: Find a way to start() the thread once the node starts spinning.
+        print('Waiting for node to spin.')
+        while self.position == Pose2D() or self.goal == Pose2D():
+            pass
+
+        self.head_towards_goal()
         while not self.arrived():
-            # Didn't you know, this is the *actual* basic motion algorithm!
-            self.turn(self.remap_angle(self.position.theta + np.pi/2))
-            time.sleep(1)
+            while not self.obstructed():
+                self.move_forward()
+            iters = 0
+            while iters <= self.max_iters:
+                while self.obstructed():
+                    # Adjust heading by pi/8 radians
+                    self.turn(self.remap_angle(self.position.theta - np.pi/8))
+                self.move_forward()
+                iters += 1
+            self.head_towards_goal()
+        self.stop()
 
     def turn(self, heading):
         """Turns the robot in-place to the given heading.
@@ -107,15 +126,11 @@ class BasicMotionController(Node):
 
         Note that this function will block until the desired heading is achieved.
         """
-        print('Turning towards', heading)
         msg = Float32()
-        # Stop the robot
-        msg.data = 0.0
-        self.left.publish(msg)
-        self.right.publish(msg)
+        self.stop()
 
         # BUG: There's a bug here, because the heading and pose orientation are
-        # both remapped. But what happens when theta is in Q1 and heading is in Q4?
+        # both remapped. But what happens when orientation is in Q1 and heading is in Q4?
         if heading - self.position.theta < 0:
             msg.data = self.base_speed
             self.left.publish(msg)
@@ -131,12 +146,50 @@ class BasicMotionController(Node):
         while not math.isclose(self.position.theta, heading, abs_tol=0.2):
             pass
 
-        # Stop the robot
-        msg.data = 0.0
-        self.left.publish(msg)
-        self.right.publish(msg)
+        self.stop()
 
     def arrived(self):
         """Determines whether the robot has arrived at its goal"""
         # Do not require orientations to be equal, because I'm not *that* masochistic.
-        return self._pose_equal(self.position, self.goal, tol=2.0, theta=False)
+        return self._pose_equal(self.position, self.goal, tol=3.0, theta=False)
+
+    def move_forward(self):
+        """Drives the robot forward in a straight line until directed otherwise.
+
+        Nonblocking.
+        """
+        msg = Float32()
+        msg.data = self.base_speed
+        self.left.publish(msg)
+        self.right.publish(msg)
+
+    def head_towards_goal(self):
+        """Turn the robot to face the goal, and drives forward.
+
+        Blocks until the robot's heading is set, then sets the wheel speeds.
+        """
+        # Get the vector from the robot to the goal.
+        robot = np.array([self.position.x, self.position.y])
+        goal = np.array([self.goal.x, self.goal.y])
+        v = goal - robot
+        # Compute the direction from the robot position to the goal.
+        heading = self.remap_angle(np.arctan2(v[1], v[0]))
+        print('Vector:', v)
+        print('Heading:', heading)
+        # Turn to that heading.
+        self.turn(heading)
+        # Set the wheel speeds and exit.
+        self.move_forward()
+
+    def obstructed(self):
+        """Determines whether the robot is obstructed by an obstacle."""
+        # We are obstructed if any of the sensors have been triggered.
+        # TODO: Be more intelligent and consider only contact sensors in the front?
+        return any(self.contacts)
+
+    def stop(self):
+        """Stops the robot's motion"""
+        msg = Float32()
+        msg.data = 0.0
+        self.left.publish(msg)
+        self.right.publish(msg)
