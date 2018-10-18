@@ -151,7 +151,7 @@ class BasicMotionController(Node):
     def arrived(self):
         """Determines whether the robot has arrived at its goal"""
         # Do not require orientations to be equal, because I'm not *that* masochistic.
-        return self._pose_equal(self.position, self.goal, tol=3.0, theta=False)
+        return self._pose_equal(self.position, self.goal, tol=2.0, theta=False)
 
     def move_forward(self):
         """Drives the robot forward in a straight line until directed otherwise.
