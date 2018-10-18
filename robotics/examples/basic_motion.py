@@ -20,7 +20,7 @@ def main():
     plotter = GpsPlotter('GpsPlotter', 'robot/gps')
 
     manager.add_node(controller)
-    # manager.add_node(plotter)
+    manager.add_node(plotter)
 
     manager.run()
     rclpy.shutdown()

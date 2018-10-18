@@ -1,5 +1,6 @@
 import math
 import threading as th
+import time
 
 import numpy as np
 from geometry_msgs.msg import Pose2D
@@ -112,9 +113,10 @@ class BasicMotionController(Node):
             iters = 0
             while iters <= self.max_iters:
                 while self.obstructed():
-                    # Adjust heading by pi/8 radians
-                    self.turn(self.remap_angle(self.position.theta - np.pi/8))
+                    self.turn(self.remap_angle(self.position.theta - np.pi/4))
                 self.move_forward()
+                # Need to give it a chance to drive forward.
+                time.sleep(0.1)
                 iters += 1
             self.head_towards_goal()
         self.stop()
@@ -168,6 +170,7 @@ class BasicMotionController(Node):
 
         Blocks until the robot's heading is set, then sets the wheel speeds.
         """
+        print('Heading towards goal.')
         # Get the vector from the robot to the goal.
         robot = np.array([self.position.x, self.position.y])
         goal = np.array([self.goal.x, self.goal.y])
