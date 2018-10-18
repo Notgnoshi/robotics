@@ -183,9 +183,8 @@ class BasicMotionController(Node):
 
     def obstructed(self):
         """Determines whether the robot is obstructed by an obstacle."""
-        # We are obstructed if any of the sensors have been triggered.
-        # TODO: Be more intelligent and consider only contact sensors in the front?
-        return any(self.contacts)
+        # Sensors 1, 2, and 3 are front right, front, and front left respectively.
+        return any(self.contacts[1:4])
 
     def stop(self):
         """Stops the robot's motion"""
