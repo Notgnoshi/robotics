@@ -43,7 +43,7 @@ class BasicMotionController(Node):
         p1 = np.array(p1)
         p2 = np.array(p2)
 
-        distance = np.sqrt(np.sum(2 ** (p2 - p1)))
+        distance = np.sqrt(np.sum((p2 - p1)**2))
 
         return distance <= tol
 
