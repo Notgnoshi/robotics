@@ -9,8 +9,7 @@ from std_msgs.msg import ByteMultiArray, Float32
 
 
 class BasicMotionController(Node):
-    """A robot control node to implement the Basic Motion Algorithm for
-    planning motion to a goal.
+    """A ROS node implementing the Basic Motion Algorithm.
 
     Algorithm:
         set heading towards goal
@@ -28,7 +27,7 @@ class BasicMotionController(Node):
 
     @staticmethod
     def _pose_equal(pose1, pose2, tol=2.0, theta=False):
-        """Compare two Pose2D poses for equality
+        """Compare two Pose2D poses for equality.
 
         :param pose1: The first Pose2D pose to compare.
         :param pose2: The second Pose2D pose to compare.
@@ -54,7 +53,7 @@ class BasicMotionController(Node):
         return np.mod(angle, 2*np.pi)
 
     def __init__(self, position_topic, goal_topic, contact_topic, left_control_topic, right_control_topic):
-        """Creates a basic motion planner for controlling motion to goal.
+        """Create a basic motion planner for controlling motion to goal.
 
         :param position_topic: The topic for the current position.
         :param goal_topic: The topic for the goal position.
@@ -85,22 +84,22 @@ class BasicMotionController(Node):
         self.job.start()
 
     def update_goal(self, pose):
-        """Updates the position of the goal."""
+        """Update the position of the goal."""
         self.goal = pose
 
     def update_position(self, pose):
-        """Updates the current robot position."""
+        """Update the current robot position."""
         # Rotate so that 0rad is in pos x direction instead of pos y...
         # TODO: <rant></rant>
         pose.theta = self.remap_angle(pose.theta + np.pi/2)
         self.position = pose
 
     def update_contacts(self, msg):
-        """Updates the contact sensor array."""
+        """Update the contact sensor array."""
         self.contacts = [bool(ord(b)) for b in msg.data]
 
     def algorithm(self):
-        """The top level container for the Basic Motion Algorithm."""
+        """Top level container for the Basic Motion Algorithm."""
         # TODO: Find a way to start() the thread once the node starts spinning.
         print('Waiting for node to spin.')
         while self.position == Pose2D() or self.goal == Pose2D():
@@ -122,7 +121,7 @@ class BasicMotionController(Node):
         self.stop()
 
     def turn(self, heading):
-        """Turns the robot in-place to the given heading.
+        """Turn the robot in-place to the given heading.
 
         :param heading: The desired heading of the robot, in radians.
 
@@ -185,12 +184,12 @@ class BasicMotionController(Node):
         self.move_forward()
 
     def obstructed(self):
-        """Determines whether the robot is obstructed by an obstacle."""
+        """Determine whether the robot is obstructed by an obstacle."""
         # Sensors 1, 2, and 3 are front right, front, and front left respectively.
         return any(self.contacts[1:4])
 
     def stop(self):
-        """Stops the robot's motion"""
+        """Stop the robot's motion"""
         msg = Float32()
         msg.data = 0.0
         self.left.publish(msg)
