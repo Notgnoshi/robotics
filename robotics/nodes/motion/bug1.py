@@ -98,6 +98,8 @@ class BugOneController(Node):
         self.hit_point = Pose2D()
         self.leave_point = Pose2D()
 
+        self.boundary_follow = False
+
     def update_lidar(self, scan):
         """Receive updates from the robot LIDAR sensor.
 
@@ -105,6 +107,9 @@ class BugOneController(Node):
         :type scan: sensor_msgs.msg.LaserScan
         """
         self.sweep = scan
+
+        if self.boundary_follow:
+            raise NotImplementedError('TODO')
 
     def update_position(self, pose):
         """Receive update from the robot GPS sensor.
@@ -156,7 +161,9 @@ class BugOneController(Node):
                 break
 
             while not self.arrived() or self.reencountered_last():
-                self.toggle_boundary_follow()
+                self.boundary_follow = True
+
+            self.boundary_follow = False
 
             self.go_to_leave()
 
@@ -224,14 +231,6 @@ class BugOneController(Node):
 
     def reencountered_last(self):
         """Determine if the robot has reencountered the hit point."""
-        raise NotImplementedError('TODO')
-
-    def toggle_boundary_follow(self):
-        """Start the wall-following PD controller.
-
-        While the robot is following the wall, also find and record the point
-        along the boundary that is closest to the goal.
-        """
         raise NotImplementedError('TODO')
 
     def go_to_leave(self):
