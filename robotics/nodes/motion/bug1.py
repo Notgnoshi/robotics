@@ -55,7 +55,7 @@ class BugOneController(Node):
         """Remap the given angle to the range [0, 2pi]."""
         return np.mod(angle, 2*np.pi)
 
-    def __init__(self, gps_topic, lidar_topic, twist_topic, goal_topic, contact_topic, speed=2.0):
+    def __init__(self, gps_topic, lidar_topic, twist_topic, goal_topic, contact_topic, speed=2.0, target_distance=0.5, Kp=1.2, Kd=1.1, Kth=1.1):
         """Create a bug controller.
 
         :param gps_topic: The robot GPS sensor topic.
@@ -70,12 +70,27 @@ class BugOneController(Node):
         :type contact_topic: str
         :param speed: The robot linear velocity.
         :type speed: float
+        :param target_distance: The target distance to the boundary when wall-following.
+        :type target_distance: float
+        :param Kp: The proportional gain on the distance error term.
+        :type Kp: float
+        :param Kd: The derivative gain on the distance error term.
+        :type Kd: float
+        :param Kth: The proportional gain on the angular error term.
+        :type Kth: float
         """
         super().__init__('BugOneController')
 
         self.base_speed = speed
         # The angular velocity when turning in-place.
         self.turn_speed = speed / 2
+
+        # Wall following configuration.
+        self.Kp = Kp
+        self.Kd = Kd
+        self.Kth = Kth
+        self.target_distance = target_distance
+        self.error = 0
 
         self.create_subscription(LaserScan, lidar_topic, self.update_lidar)
         self.create_subscription(Pose2D, gps_topic, self.update_position)
@@ -91,7 +106,6 @@ class BugOneController(Node):
         # The current state of the sensors
         self.position = Pose2D()
         self.goal = Pose2D()
-        self.sweep = LaserScan()
         self.contacts = [False] * 10
 
         # The q_l and q_h points
@@ -106,10 +120,57 @@ class BugOneController(Node):
         :param scan: The LIDAR sweep
         :type scan: sensor_msgs.msg.LaserScan
         """
-        self.sweep = scan
-
+        # TODO: Save the robot path around the boundary.
         if self.boundary_follow:
-            raise NotImplementedError('TODO')
+            l = len(scan.ranges)
+            # The start and stop indices in the sweep for the left side.
+            i_0 = l // 2
+            i_n = l
+
+            min_distance = scan.ranges[i_0]
+            min_i = i_0
+
+            for i, d in enumerate(scan.ranges[i_0:i_n + 1]):
+                if d < min_distance:
+                    min_distance = d
+                    min_i = i
+
+            min_angle = (min_i - l // 2) * scan.angle_increment
+            front_distance = scan.ranges[l // 2]
+
+            # A poor man's derivative.
+            errorp = min_distance - self.target_distance - self.error
+            self.error = min_distance - self.target_distance
+
+            self.controller(front_distance, min_angle, self.error, errorp)
+
+    def controller(self, front_distance, min_angle, error, errorp):
+        """PD controller to keep the robot at a set distance and angle from the boundary.
+
+        :param front_distance: The distance reading in front of the robot.
+        :type front_distance: float
+        :param min_angle: The angle to the minimum distance.
+        :type min_angle: float
+        :param error: The error to correct.
+        :type error: float
+        :param errorp: The time derivative of the error.
+        :type errorp: float
+        """
+        msg = Twist()
+        # A hybrid PD controller to control both the distance and the heading of the robot.
+        msg.angular.z = self.Kp * error + self.Kd * errorp + self.Kth * (min_angle - np.pi / 2)
+
+        if front_distance < self.target_distance:
+            msg.linear.x = 0.0
+        elif front_distance < 2 * self.target_distance:
+            msg.linear.x = self.base_speed / 2
+        elif abs(min_angle) > 1.75:
+            msg.linear.x = self.base_speed / 2
+        else:
+            msg.linear.x = self.base_speed
+
+        self.pub.publish(msg)
+
 
     def update_position(self, pose):
         """Receive update from the robot GPS sensor.
