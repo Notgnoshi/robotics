@@ -1,5 +1,7 @@
 import math
 import threading
+import time
+from collections import deque
 
 import numpy as np
 from geometry_msgs.msg import Pose2D, Twist
@@ -66,7 +68,7 @@ class BugOneController(Node):
         """Remap the given angle to the range [0, 2pi]."""
         return np.mod(angle, 2*np.pi)
 
-    def __init__(self, gps_topic, lidar_topic, twist_topic, goal_topic, contact_topic, speed=2.0, target_distance=0.5, Kp=1.2, Kd=1.1, Kth=1.1):
+    def __init__(self, gps_topic, lidar_topic, twist_topic, goal_topic, contact_topic, speed=2.0, target_distance=0.5, Kp=1.2, Ki=1.0, Kd=1.1, Kth=1.1):
         """Create a bug controller.
 
         :param gps_topic: The robot GPS sensor topic.
@@ -85,6 +87,8 @@ class BugOneController(Node):
         :type target_distance: float
         :param Kp: The proportional gain on the distance error term.
         :type Kp: float
+        :param Ki: The integral gain on the distance error term.
+        :type Ki: float
         :param Kd: The derivative gain on the distance error term.
         :type Kd: float
         :param Kth: The proportional gain on the angular error term.
@@ -94,14 +98,17 @@ class BugOneController(Node):
 
         self.base_speed = speed
         # The angular velocity when turning in-place.
-        self.turn_speed = speed / 2
+        self.turn_speed = speed / 3
 
         # Wall following configuration.
         self.Kp = Kp
+        self.Ki = Ki
         self.Kd = Kd
         self.Kth = Kth
         self.target_distance = target_distance
         self.error = 0
+        # Error calculation is at 10 Hz, so keep only a few seconds of history.
+        self.errors = deque(maxlen=15)
 
         self.create_subscription(LaserScan, lidar_topic, self.update_lidar)
         self.create_subscription(Pose2D, gps_topic, self.update_position)
@@ -109,9 +116,6 @@ class BugOneController(Node):
         self.create_subscription(ByteMultiArray, contact_topic, self.update_contact)
 
         self.pub = self.create_publisher(Twist, twist_topic)
-
-        self.job = threading.Thread(target=self.algorithm, daemon=True)
-        self.job.start()
 
         # TODO: I should technically use locks, but it hasn't become an issue yet.
         # The current state of the sensors
@@ -124,6 +128,9 @@ class BugOneController(Node):
         self.leave_point = Pose2D()
 
         self.boundary_follow = False
+
+        self.job = threading.Thread(target=self.algorithm, daemon=True)
+        self.job.start()
 
     def update_lidar(self, scan):
         """Receive updates from the robot LIDAR sensor.
@@ -145,19 +152,25 @@ class BugOneController(Node):
                     min_distance = d
                     min_i = i
 
-            # TODO: Break if the min distance is infinite.
-            print(f'min distance: {min_distance}')
+            if min_distance > scan.range_max:
+                print('Infinite range on left side.')
+                return
 
+            # Get the min distance by hand so that we can also get the angle it occurs at.
             min_angle = (min_i - l // 2) * scan.angle_increment
             front_distance = scan.ranges[l // 2]
 
             # A poor man's derivative.
-            errorp = min_distance - self.target_distance - self.error
+            error_d = min_distance - self.target_distance - self.error
             self.error = min_distance - self.target_distance
+            # Note that errors has forgetfulness.
+            self.errors.append(self.error)
+            # Not really a true integral, but has a similar effect.
+            error_i = sum(self.errors) / len(self.errors)
 
-            self.controller(front_distance, min_angle, self.error, errorp)
+            self.controller(front_distance, min_angle, self.error, error_i, error_d)
 
-    def controller(self, front_distance, min_angle, error, errorp):
+    def controller(self, front_distance, min_angle, error, error_i, error_d):
         """PD controller to keep the robot at a set distance and angle from the boundary.
 
         :param front_distance: The distance reading in front of the robot.
@@ -166,12 +179,14 @@ class BugOneController(Node):
         :type min_angle: float
         :param error: The error to correct.
         :type error: float
-        :param errorp: The time derivative of the error.
-        :type errorp: float
+        :param error_i: The integral of the error.
+        :type error_i: float
+        :param error_d: The time derivative of the error.
+        :type error_d: float
         """
         msg = Twist()
         # A hybrid PD controller to control both the distance and the heading of the robot.
-        msg.angular.z = self.Kp * error + self.Kd * errorp + self.Kth * (min_angle - np.pi / 2)
+        msg.angular.z = self.Kp * error +  self.Ki * error_i + self.Kd * error_d + self.Kth * (min_angle - np.pi / 2)
 
         if front_distance < self.target_distance:
             msg.linear.x = 0.0
@@ -183,7 +198,6 @@ class BugOneController(Node):
             msg.linear.x = self.base_speed
 
         self.pub.publish(msg)
-
 
     def update_position(self, pose):
         """Receive update from the robot GPS sensor.
@@ -231,33 +245,63 @@ class BugOneController(Node):
 
         # The Bug 1 algorithm
         while True:
-            while not self.arrived() or self.obstructed():
-                self.head_towards_goal()
+            print('Heading towards goal.')
+            self.head_towards_goal()
+            while not self.arrived() and not self.obstructed():
                 self.move_forward()
-
-            # The hit point is the robot's current position.
-            self.hit_point = self.position
 
             if self.arrived():
                 break
 
-            while not self.arrived() or self.reencountered_last():
-                self.boundary_follow = True
+            # Bring the robot to a stop, and back up slightly, and stop again.
+            msg = Twist()
+            self.pub.publish(msg)
+            msg.linear.x = -self.base_speed
+            msg.angular.z = -self.turn_speed
+            self.pub.publish(msg)
+            time.sleep(0.4)
+            msg.linear.x = 0.0
+            self.pub.publish(msg)
 
-            self.boundary_follow = False
+            # The hit point is the robot's current position.
+            self.hit_point = self.position
+            print(f'Hit point: {self.hit_point}')
 
+            print('Starting boundary following.')
+            self.follow_boundary()
+
+            print(f'Leave point: {self.leave_point}')
+
+            print('Heading towards leave point.')
             self.go_to_leave()
 
         # Stop the robot.
         msg = Twist()
         self.pub.publish(msg)
-        print('Finished.')
+        print('Finished. Phagocytosis.')
+
+    def follow_boundary(self):
+        """Begin following an obstacle boundary."""
+        self.boundary_follow = True
+        print('Boundary following: Leaving hit point.')
+        # Follow the boundary until we leave the hit point.
+        while self.reencountered_last():
+            pass
+
+        print('Boundary following: Searching for hit point.')
+        # Follow the boundary until we reencounter the hit point.
+        while not self.arrived() and not self.reencountered_last():
+            pass
+
+        print(f'Position "at" hit point: {self.position}')
+
+        self.boundary_follow = False
 
     def arrived(self):
         """Determine whether the robot has arrived at its goal."""
         # Do not require orientations to be equal, because I'm not *that* masochistic.
         # Also, it's getting late and I'm nowhere near done.
-        return self._pose_equal(self.position, self.goal, tol=2.0, theta=False)
+        return self._pose_equal(self.position, self.goal, tol=3.0, theta=False)
 
     def move_forward(self):
         """Drive the robot forward until directed otherwise."""
@@ -276,16 +320,16 @@ class BugOneController(Node):
         msg = Twist()
 
         if heading - self.position.theta < 0:
-            msg.angular.z = self.turn_speed
-        else:
             msg.angular.z = -self.turn_speed
+        else:
+            msg.angular.z = self.turn_speed
 
         self.pub.publish(msg)
 
-        while not math.isclose(self.position.theta, heading, abs_tol=0.2):
+        while not math.isclose(self.position.theta, heading, abs_tol=0.1):
             pass
 
-        msg.angular.z = 0
+        msg.angular.z = 0.0
         self.pub.publish(msg)
 
     def head_towards_goal(self):
@@ -293,15 +337,12 @@ class BugOneController(Node):
 
         Note that this function blocks until the robot's heading is correctly set.
         """
-        print('Heading towards goal.')
         # Get the vector from the robot to the goal.
         robot = np.array([self.position.x, self.position.y])
         goal = np.array([self.goal.x, self.goal.y])
         v = goal - robot
         # Compute the direction from the robot position to the goal.
         heading = self.remap_angle(np.arctan2(v[1], v[0]))
-        print('Vector:', v)
-        print('Heading:', heading)
 
         self.turn(heading)
         self.move_forward()
@@ -309,15 +350,17 @@ class BugOneController(Node):
     def obstructed(self):
         """Determine whether the robot is obstructed by an obstacle."""
         # Sensors 1, 2, and 3 are front right, front, and front left respectively.
-        return any(self.contacts[1:4])
+        return any(self.contacts)
 
     def reencountered_last(self):
         """Determine if the robot has reencountered the hit point."""
-        return self._pose_equal(self.position, self.hit_point, tol=0.5, theta=False)
+        return self._pose_equal(self.position, self.hit_point, tol=0.8, theta=False)
 
     def go_to_leave(self):
         """Follow the obstacle wall until the leave point in encountered."""
         print('Following boundary to leave point.')
+        self.boundary_follow = True
         while not self._pose_equal(self.position, self.leave_point, tol=0.5, theta=False):
-            self.boundary_follow = True
+            pass
+        print(f'Position "at" leave point: {self.position}')
         self.boundary_follow = False

@@ -23,11 +23,12 @@ def main():
                                       twist_topic='robot/control/twist',
                                       goal_topic='goal/gps',
                                       contact_topic='robot/contact',
-                                      speed=2.0,
+                                      speed=3.3,
                                       target_distance=0.5,
-                                      Kp=1.2,
-                                      Kd=1.1,
-                                      Kth=1.1,
+                                      Kp=3.0,
+                                      Ki=3.5,
+                                      Kd=3.0,
+                                      Kth=3.1,
                                      )
 
     plotter = GpsPlotter('GpsPlotter', 'robot/gps', history=None)
