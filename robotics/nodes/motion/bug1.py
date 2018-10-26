@@ -28,14 +28,27 @@ class BugOneController(Node):
             exit
     """
 
-    @staticmethod
-    def _pose_equal(pose1, pose2, tol=2.0, theta=False):
+    @classmethod
+    def _pose_equal(cls, pose1, pose2, tol=2.0, theta=False):
         """Compare two Pose2D poses for equality.
 
         :param pose1: The first Pose2D pose to compare.
         :param pose2: The second Pose2D pose to compare.
         :param tol: How close is close enough.
         :param theta: Whether or not to compare the pose headings.
+        """
+        return cls._pose_distance(pose1, pose2, theta) <= tol
+
+    @staticmethod
+    def _pose_distance(pose1, pose2, theta=False):
+        """Find the Euclidean distance between two poses.
+
+        :param pose1: The first pose.
+        :type pose1: geometry_msgs.msg.Pose2D
+        :param pose2: The second pose.
+        :type pose2: geometry_msgs.msg.Pose2D
+        :param theta: Whether to include the pose orientations, defaults to False.
+        :type theta: bool, optional
         """
         p1 = [pose1.x, pose1.y]
         p2 = [pose2.x, pose2.y]
@@ -46,9 +59,7 @@ class BugOneController(Node):
         p1 = np.array(p1)
         p2 = np.array(p2)
 
-        distance = np.sqrt(np.sum((p2 - p1)**2))
-
-        return distance <= tol
+        return np.sqrt(np.sum((p2 - p1)**2))
 
     @staticmethod
     def remap_angle(angle):
@@ -120,7 +131,6 @@ class BugOneController(Node):
         :param scan: The LIDAR sweep
         :type scan: sensor_msgs.msg.LaserScan
         """
-        # TODO: Save the robot path around the boundary.
         if self.boundary_follow:
             l = len(scan.ranges)
             # The start and stop indices in the sweep for the left side.
@@ -134,6 +144,9 @@ class BugOneController(Node):
                 if d < min_distance:
                     min_distance = d
                     min_i = i
+
+            # TODO: Break if the min distance is infinite.
+            print(f'min distance: {min_distance}')
 
             min_angle = (min_i - l // 2) * scan.angle_increment
             front_distance = scan.ranges[l // 2]
@@ -183,6 +196,10 @@ class BugOneController(Node):
         pose.theta = self.remap_angle(pose.theta + np.pi/2)
         self.position = pose
 
+        if self.boundary_follow:
+            if self._pose_distance(pose, self.goal) < self._pose_distance(self.leave_point, self.goal):
+                self.leave_point = pose
+
     def update_goal(self, pose):
         """Receive updates from the robot's goal.
 
@@ -218,6 +235,9 @@ class BugOneController(Node):
                 self.head_towards_goal()
                 self.move_forward()
 
+            # The hit point is the robot's current position.
+            self.hit_point = self.position
+
             if self.arrived():
                 break
 
@@ -231,6 +251,7 @@ class BugOneController(Node):
         # Stop the robot.
         msg = Twist()
         self.pub.publish(msg)
+        print('Finished.')
 
     def arrived(self):
         """Determine whether the robot has arrived at its goal."""
@@ -292,8 +313,11 @@ class BugOneController(Node):
 
     def reencountered_last(self):
         """Determine if the robot has reencountered the hit point."""
-        raise NotImplementedError('TODO')
+        return self._pose_equal(self.position, self.hit_point, tol=0.5, theta=False)
 
     def go_to_leave(self):
         """Follow the obstacle wall until the leave point in encountered."""
-        raise NotImplementedError('TODO')
+        print('Following boundary to leave point.')
+        while not self._pose_equal(self.position, self.leave_point, tol=0.5, theta=False):
+            self.boundary_follow = True
+        self.boundary_follow = False

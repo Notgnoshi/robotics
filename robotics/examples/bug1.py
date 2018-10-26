@@ -21,9 +21,16 @@ def main():
     bug_controller = BugOneController(gps_topic='robot/gps',
                                       lidar_topic='robot/lidar',
                                       twist_topic='robot/control/twist',
+                                      goal_topic='goal/gps',
+                                      contact_topic='robot/contact',
+                                      speed=2.0,
+                                      target_distance=0.5,
+                                      Kp=1.2,
+                                      Kd=1.1,
+                                      Kth=1.1,
                                      )
 
-    plotter = GpsPlotter('GpsPlotter', 'robot/gps')
+    plotter = GpsPlotter('GpsPlotter', 'robot/gps', history=None)
 
     manager.add_node(plotter)
     manager.add_node(controller)
